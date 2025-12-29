@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Simple Live Chat</title>
+<style>
+  :root {
+    --primary: #0066cc;
+    --primary-dark: #0052a3;
+    --bg: #f5f7fa;
+    --user-bg: #0066cc;
+    --ai-bg: #e9ecef;
+    --text-user: white;
+    --text-ai: #212529;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: var(--bg);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-container {
+    flex: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    background: var(--primary);
+    color: white;
+    padding: 14px 20px;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+  }
+
+  .message {
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    line-height: 1.4;
+    position: relative;
+    font-size: 0.98rem;
+    word-wrap: break-word;
+  }
+
+  .message.user {
+    align-self: flex-end;
+    background: var(--user-bg);
+    color: var(--text-user);
+    border-bottom-right-radius: 5px;
+  }
+
+  .message.ai {
+    align-self: flex-start;
+    background: var(--ai-bg);
+    color: var(--text-ai);
+    border-bottom-left-radius: 5px;
+  }
+
+  .typing {
+    align-self: flex-start;
+    padding: 12px 16px;
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+
+  .input-area {
+    padding: 16px 20px;
+    border-top: 1px solid #e9ecef;
+    background: white;
+    display: flex;
+    gap: 12px;
+  }
+
+  #message-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #ced4da;
+    border-radius: 24px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #message-input:focus {
+    border-color: var(--primary);
+  }
+
+  #send-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #send-btn:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: scale(1.08);
+  }
+
+  #send-btn:disabled {
+    background: #adb5bd;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">Chat with AI Assistant</div>
+  
+  <div class="messages" id="messages">
+   
+  </div>
+
+  <div class="input-area">
+    <input 
+      type="text" 
+      id="message-input" 
+      placeholder="Type your message..." 
+      autocomplete="off"
+    />
+    <button id="send-btn" disabled>➤</button>
+  </div>
+</div>
+
+<script>
+
+
+const messagesDiv = document.getElementById('messages');
+const input = document.getElementById('message-input');
+const sendBtn = document.getElementById('send-btn');
+
+function addMessage(content, isUser = false) {
+  const msg = document.createElement('div');
+  msg.classList.add('message');
+  msg.classList.add(isUser ? 'user' : 'ai');
+  msg.textContent = content;
+  
+  messagesDiv.appendChild(msg);
+  scrollToBottom();
+}
+
+function showTyping() {
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.id = 'typing-indicator';
+  typing.textContent = 'AI is thinking...';
+  messagesDiv.appendChild(typing);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const typing = document.getElementById('typing-indicator');
+  if (typing) typing.remove();
+}
+
+function scrollToBottom(smooth = true) {
+  messagesDiv.scrollTo({
+    top: messagesDiv.scrollHeight,
+    behavior: smooth ? 'smooth' : 'auto'
+  });
+}
+
+
+async function getAIResponse(userMessage) {
+  
+  await new Promise(resolve => setTimeout(resolve, 1200 + Math.random() * 1800));
+  
+  const responses = [
+    "That's an interesting question! 🤔",
+    "Let me think about that for a moment...",
+    "Here's what I found: ...",
+    "Good point! I hadn't considered that angle.",
+    "Could you please elaborate a bit more?",
+    "That's actually a very common question.",
+    "Interesting... tell me more!",
+    "I like where this is going 😊"
+  ];
+  
+  return responses[Math.floor(Math.random() * responses.length)];
+}
+
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+
+ 
+  addMessage(text, true);
+  
+  
+  input.value = '';
+  updateSendButtonState();
+
+
+  showTyping();
+
+  try {
+    const response = await getAIResponse(text);
+    removeTyping();
+    addMessage(response, false);
+  } catch (err) {
+    removeTyping();
+    addMessage("Sorry, something went wrong... 😔", false);
+  }
+}
+
+
+function updateSendButtonState() {
+  const disabled = input.value.trim().length === 0;
+  sendBtn.disabled = disabled;
+}
+
+
+input.addEventListener('input', updateSendButtonState);
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!sendBtn.disabled) {
+      sendMessage();
+    }
+  }
+});
+
+sendBtn.addEventListener('click', sendMessage);
+
+
+setTimeout(() => {
+  addMessage("Hello! How can I help you today? 👋", false);
+}, 600);
+
+</script>
+</body>
+</html>
